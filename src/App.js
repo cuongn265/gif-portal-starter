@@ -1,30 +1,31 @@
-import twitterLogo from "./assets/twitter-logo.svg";
-import "./App.css";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import twitterLogo from './assets/twitter-logo.svg';
+import './App.css';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 // Constants
-const TWITTER_HANDLE = "_buildspace";
+const TWITTER_HANDLE = '_buildspace';
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 const TEST_GIFS = [
-  "https://media.giphy.com/media/x5163Kf7A39LRJEtRz/giphy.gif",
-  "https://media.giphy.com/media/jh7F7XwHTywg85ekdl/giphy.gif",
-  "https://media.giphy.com/media/TgyJebqyMtPrOxiPdk/giphy.gif",
-  "https://media.giphy.com/media/lkgfoscTuW84U2Razd/giphy.gif",
+  'https://media.giphy.com/media/x5163Kf7A39LRJEtRz/giphy.gif',
+  'https://media.giphy.com/media/jh7F7XwHTywg85ekdl/giphy.gif',
+  'https://media.giphy.com/media/TgyJebqyMtPrOxiPdk/giphy.gif',
+  'https://media.giphy.com/media/lkgfoscTuW84U2Razd/giphy.gif',
 ];
 const App = () => {
   const [walletAddress, setWalletAddress] = useState(null);
   const [inputValue, setInputValue] = useState('');
+  const [gifList, setGifList] = useState([]);
 
   const checkIfWalletIsConnected = async () => {
     if (window?.solana?.isPhantom) {
-      console.log("Phantom wallet found");
+      console.log('Phantom wallet found');
 
       const response = await window.solana.connect({ onlyIfTrusted: true });
-      console.log("Connected with Public key", response.publicKey.toString());
+      console.log('Connected with Public key', response.publicKey.toString());
 
       setWalletAddress(response.publicKey.toString());
     } else {
-      alert("Solana object not found! Get a Phantom Wallet");
+      alert('Solana object not found! Get a Phantom Wallet');
     }
   };
 
@@ -32,15 +33,25 @@ const App = () => {
     const { solana } = window;
     if (solana) {
       const response = await solana.connect();
-      console.log("Connected with Public Key:", response.publicKey.toString());
+      console.log('Connected with Public Key:', response.publicKey.toString());
       setWalletAddress(response.publicKey.toString());
     }
   };
 
   const onInputChange = (event) => {
     const { value } = event.target;
-    setInputValue(value)
-  }
+    setInputValue(value);
+  };
+
+  const sendGif = async () => {
+    if (inputValue.length > 0) {
+      console.log('Gif link: ', inputValue);
+      setGifList([inputValue, ...gifList]);
+      setInputValue('');
+    } else {
+      console.log('Empty input. Try again.');
+    }
+  };
 
   const renderNotConnectedContainer = () => (
     <button
@@ -56,15 +67,21 @@ const App = () => {
       <form
         onSubmit={(event) => {
           event.preventDefault();
+          sendGif();
         }}
       >
-        <input type="text" placeholder="Enter gif link" value={inputValue} onChange={onInputChange} />
+        <input
+          type="text"
+          placeholder="Enter gif link"
+          value={inputValue}
+          onChange={onInputChange}
+        />
         <button type="submit" className="cta-button submit-gif-button">
           Submit
         </button>
       </form>
       <div className="gif-grid">
-        {TEST_GIFS.map((gif) => (
+        {gifList.map((gif) => (
           <div className="gif-item" key={gif}>
             <img src={gif} alt={gif} />
           </div>
@@ -78,12 +95,24 @@ const App = () => {
       await checkIfWalletIsConnected();
     };
 
-    window.addEventListener("load", onLoad);
-    return () => window.removeEventListener("load", onLoad);
+    window.addEventListener('load', onLoad);
+    return () => window.removeEventListener('load', onLoad);
   }, []);
+
+  useEffect(() => {
+    if (walletAddress) {
+      console.log('Fetching GIF list...');
+    }
+
+    setGifList(TEST_GIFS);
+    // return () => {
+    //   second
+    // }
+  }, [walletAddress]);
+
   return (
     <div className="App">
-      <div className={walletAddress ? "authed-container" : "container"}>
+      <div className={walletAddress ? 'authed-container' : 'container'}>
         <div className="header-container">
           <p className="header">🖼 GIF Portal</p>
           <p className="sub-text">
