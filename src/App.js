@@ -206,6 +206,7 @@ const App = () => {
 
       getGifList();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [walletAddress]);
 
   return (
