@@ -4,25 +4,23 @@ import { useEffect, useState } from 'react';
 import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
 import * as anchor from '@project-serum/anchor';
 import { Program } from '@project-serum/anchor';
+import kp from './keypair.json';
 
 // Constants
 const TWITTER_HANDLE = '_buildspace';
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
-const TEST_GIFS = [
-  'https://media.giphy.com/media/x5163Kf7A39LRJEtRz/giphy.gif',
-  'https://media.giphy.com/media/jh7F7XwHTywg85ekdl/giphy.gif',
-  'https://media.giphy.com/media/TgyJebqyMtPrOxiPdk/giphy.gif',
-  'https://media.giphy.com/media/lkgfoscTuW84U2Razd/giphy.gif',
-];
 
 const { web3 } = anchor;
 const { SystemProgram, Keypair } = web3;
-let baseAccount = Keypair.generate();
 const programId = new PublicKey('7AkFkujSsiQMkg7syN8vF6xuKtJixUQo83y5rD3Fz8rL');
 const network = clusterApiUrl('devnet');
 const opts = {
   preflightCommitment: 'processed',
 };
+
+const arr = Object.values(kp._keypair.secretKey);
+const secret = new Uint8Array(arr);
+const baseAccount = Keypair.fromSecretKey(secret);
 
 const App = () => {
   const [walletAddress, setWalletAddress] = useState(null);
@@ -56,6 +54,7 @@ const App = () => {
   const getProgram = async () => {
     console.log('programId', programId.toString());
     console.log('provider', getProvider());
+    console.log('baseAccount', baseAccount.publicKey.toString());
     const idl = await Program.fetchIdl(programId, getProvider());
 
     return new Program(idl, programId, getProvider());
@@ -115,12 +114,28 @@ const App = () => {
   };
 
   const sendGif = async () => {
-    if (inputValue.length > 0) {
-      console.log('Gif link: ', inputValue);
-      setGifList([inputValue, ...gifList]);
-      setInputValue('');
-    } else {
-      console.log('Empty input. Try again.');
+    if (inputValue.length === 0) {
+      console.log('No gif link given!');
+      return;
+    }
+    setInputValue('');
+    console.log('Gif link: ', inputValue);
+
+    try {
+      const provider = getProvider();
+      const program = await getProgram();
+
+      await program.rpc.addGif(inputValue, {
+        accounts: {
+          baseAccount: baseAccount.publicKey,
+          user: provider.wallet.publicKey,
+        },
+      });
+
+      console.log('Successfully sent to program', inputValue);
+      await getGifList();
+    } catch (error) {
+      console.log('Error sending GIF: ', error);
     }
   };
 
